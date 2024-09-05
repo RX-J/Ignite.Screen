@@ -7,6 +7,9 @@ namespace Ignite {
             [System.Runtime.InteropServices.DllImport ("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, SetLastError = true)]
             internal static extern bool GetMonitorInfo (nint hMonitor, ref MONITORINFO lpmi);
 
+            [System.Runtime.InteropServices.DllImport ("user32.dll")]
+            internal static extern bool GetCursorPos (out POINT lpPoint);
+
             [System.Runtime.InteropServices.DllImport ("user32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
             internal static extern nint CreateWindowEx (int dwExStyle, string lpClassName, string lpWindowName, int dwStyle, int x, int y, int nWidth, int nHeight, nint hWndParent, nint hMenu, nint hInstance, nint lpParam);
 
@@ -604,6 +607,76 @@ namespace Ignite {
                 _ = Import.DeleteDC (handle);
 
                 return SIZE;
+            }
+        }
+
+        public static class Mouse {
+            [System.Runtime.InteropServices.DllImport ("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+            private static extern bool GetMonitorInfo (nint hMonitor, MONITORINFO lpmi);
+
+            [System.Runtime.InteropServices.StructLayout (System.Runtime.InteropServices.LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+            private class MONITORINFO {
+                public int cbSize = System.Runtime.InteropServices.Marshal.SizeOf (typeof (MONITORINFO));
+                public Import.RECT rcMonitor = new ();
+                public Import.RECT rcWork = new ();
+                public int dwFlags = 0;
+            }
+
+            private static int Index;
+            private static Import.POINT Point, Last;
+            private static bool Found = false;
+
+            private static class Shadow {
+                internal static int Monitor;
+                internal static ((int X, int Y) True, (int X, int Y) Relative) Position;
+            }
+
+            public static int Monitor {
+                get {
+                    Fetch ();
+                    return Shadow.Monitor;
+                }
+            }
+
+            public static ((int X, int Y) True, (int X, int Y) Relative) Position {
+                get {
+                    Fetch ();
+                    return (Shadow.Position.True, Shadow.Position.Relative);
+                }
+            }
+
+            private static void Fetch () {
+                if (Import.GetCursorPos (out Point)) {
+                    if (Point.X != Last.X || Point.Y != Last.Y) {
+                        Last = Point;
+                        Index = -1;
+                        Shadow.Position.True = (Point.X, Point.Y);
+                        Found = false;
+
+                        _ = Import.EnumDisplayMonitors (nint.Zero, nint.Zero, Enum, nint.Zero);
+
+                        if (!Found)
+                            throw new System.Exception ("Kein Monitor gefunden, auf dem sich die Maus befindet.");
+                    }
+                } else {
+                    throw new System.Exception ("Fehler beim Abrufen der Mausposition.");
+                }
+            }
+
+            private static bool Enum (nint hMonitor, nint hdcMonitor, ref Import.RECT lprcMonitor, nint dwData) {
+                Index++;
+
+                if (Point.X >= lprcMonitor.left && Point.X <= lprcMonitor.right && Point.Y >= lprcMonitor.top && Point.Y <= lprcMonitor.bottom) {
+                    var info = new MONITORINFO ();
+
+                    _ = GetMonitorInfo (hMonitor, info);
+
+                    Found = true;
+                    Shadow.Monitor = Index;
+                    Shadow.Position.Relative = (Point.X - info.rcMonitor.left, Point.Y - info.rcMonitor.top);
+                    return false;
+                }
+                return true;
             }
         }
 
