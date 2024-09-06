@@ -328,7 +328,7 @@ namespace Ignite {
                 readonly get => this.Shadow_Radius;
                 set {
                     if (value is <= 0 or null)
-                        throw new System.ArgumentException ("An arc cannot have a radius that is less than or equal to zero.");
+                        throw new System.ArgumentException ("A circle cannot have a radius that is less than or equal to zero.");
 
                     this.Shadow_Radius = value;
                     this.Shadow_Width = Shadow_Radius.Value;
@@ -339,7 +339,7 @@ namespace Ignite {
                 readonly get => this.Shadow_Width;
                 set {
                     if (value is <= 0)
-                        throw new System.ArgumentException ("An arc cannot have a width that is less than or equal to zero.");
+                        throw new System.ArgumentException ("A circle cannot have a width that is less than or equal to zero.");
 
                     this.Shadow_Width = value;
                     this.Shadow_Radius = this.Shadow_Width == this.Shadow_Height
@@ -351,7 +351,7 @@ namespace Ignite {
                 readonly get => this.Shadow_Height;
                 set {
                     if (value is <= 0)
-                        throw new System.ArgumentException ("An arc cannot have a height that is less than or equal to zero.");
+                        throw new System.ArgumentException ("A circle cannot have a height that is less than or equal to zero.");
 
                     this.Shadow_Height = value;
                     this.Shadow_Radius = this.Shadow_Height == this.Shadow_Width
@@ -364,7 +364,7 @@ namespace Ignite {
                 readonly get => this.Shadow_Thickness;
                 set {
                     if (value <= 0)
-                        throw new System.ArgumentException ("An arc cannot have a thickness that is less than or equal to zero");
+                        throw new System.ArgumentException ("A circle cannot have a thickness that is less than or equal to zero");
 
                     this.Shadow_Thickness = value;
                 }
@@ -662,10 +662,10 @@ namespace Ignite {
                         _ = Import.EnumDisplayMonitors (nint.Zero, nint.Zero, Enum, nint.Zero);
 
                         if (!Found)
-                            throw new System.Exception ("Kein Monitor gefunden, auf dem sich die Maus befindet.");
+                            throw new System.Exception ("No monitor found where the mouse is located.");
                     }
                 } else {
-                    throw new System.Exception ("Fehler beim Abrufen der Mausposition.");
+                    throw new System.Exception ("Error when retrieving the mouse position.");
                 }
             }
 
