@@ -1057,7 +1057,7 @@ namespace Ignite {
                 if (this.Handle == nint.Zero)
                     return;
 
-                this.Append (new Rectangle (0, 0, Monitors[this.Monitor].Resolution.Width, Monitors[this.Monitor].Resolution.Height, Color.Gray, fill: true));
+                this.Append (new Rectangle (0, 0, Monitors[this.Monitor].Resolution.Width, Monitors[this.Monitor].Resolution.Height, Color.Transparent, fill: true));
                 System.GC.Collect (2, System.GCCollectionMode.Aggressive);
             }
 
