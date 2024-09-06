@@ -185,6 +185,11 @@ namespace Ignite {
             return true;
         }
 
+        public static void Identify () {
+            for (var i = 0; i < Monitors.Count; i++)
+                Draw.Temporarily (new Text (Monitors[i].Resolution.Width - Text.Width (i + 1, size: 128), -30, i + 1, size: 128), 1000, i);
+        }
+
         public struct Line {
             private int Shadow_Length;
             private int Shadow_Thickness;
@@ -386,7 +391,7 @@ namespace Ignite {
                 this.Fill = fill;
             }
         }
-        public struct Polygon  {
+        public struct Polygon {
             private int Shadow_Thickness;
             private (int[] Lengths, int[] Angles) Shadow_Metrics;
 
@@ -535,7 +540,7 @@ namespace Ignite {
 
             public int X;
             public int Y;
-            public string Content;
+            public object Content;
             public uint Foreground;
             public uint Background;
             public int Size {
@@ -554,7 +559,7 @@ namespace Ignite {
             public bool Strikethrough;
             public int Rotation;
 
-            public Text (in int x, in int y, in string content, in uint foreground = Color.White, in uint background = Color.Transparent, in int size = 16, in string font = "Consolas", in bool bold = false, in bool italic = false, in bool underline = false, in bool strikethrough = false, in int rotation = 0) {
+            public Text (in int x, in int y, in object content, in uint foreground = Color.White, in uint background = Color.Transparent, in int size = 16, in string font = "Consolas", in bool bold = false, in bool italic = false, in bool underline = false, in bool strikethrough = false, in int rotation = 0) {
                 this.X = x;
                 this.Y = y;
                 this.Content = content;
@@ -574,12 +579,12 @@ namespace Ignite {
             public int Height ()
                 => Sizes (in this.Shadow_Size, in this.Rotation, in this.Bold, in this.Italic, in this.Underline, in this.Strikethrough, in this.Font, in this.Content).cy + 1;
 
-            public static int Width (in string content, in int size = 16, in string font = "Consolas", in bool bold = false, in bool italic = false, in bool underline = false, in bool strikethrough = false, in int rotation = 0)
+            public static int Width (in object content, in int size = 16, in string font = "Consolas", in bool bold = false, in bool italic = false, in bool underline = false, in bool strikethrough = false, in int rotation = 0)
                 => Sizes (in size, in rotation, in bold, in italic, in underline, in strikethrough, in font, in content).cx + 1;
-            public static int Height (in string content, in int size = 16, in string font = "Consolas", in bool bold = false, in bool italic = false, in bool underline = false, in bool strikethrough = false, in int rotation = 0)
+            public static int Height (in object content, in int size = 16, in string font = "Consolas", in bool bold = false, in bool italic = false, in bool underline = false, in bool strikethrough = false, in int rotation = 0)
                 => Sizes (in size, in rotation, in bold, in italic, in underline, in strikethrough, in font, in content).cy + 1;
 
-            private static Import.SIZE Sizes (in int size, in int rotation, in bool bold, in bool italic, in bool underline, in bool strikethrough, in string font, in string content) {
+            private static Import.SIZE Sizes (in int size, in int rotation, in bool bold, in bool italic, in bool underline, in bool strikethrough, in string font, in object content) {
                 var handle = Import.CreateCompatibleDC (nint.Zero);
 
                 var current = Import.CreateFont (
@@ -600,8 +605,9 @@ namespace Ignite {
                 );
 
                 var previous = Import.SelectObject (handle, current);
+                var text = content.ToString () ?? "";
 
-                _ = Import.GetTextExtentPoint32 (handle, content, content.Length, out var SIZE);
+                _ = Import.GetTextExtentPoint32 (handle, text, text.Length, out var SIZE);
                 _ = Import.SelectObject (handle, previous);
                 _ = Import.DeleteObject (current);
                 _ = Import.DeleteDC (handle);
@@ -983,11 +989,12 @@ namespace Ignite {
                     );
 
                     var previous = Import.SelectObject (handle, current);
+                    var content = text.Content.ToString () ?? "";
 
                     _ = Import.SetBkMode (handle, text.Background == Color.Transparent ? 1 : 2);
                     _ = Import.SetTextColor (handle, Format (text.Foreground));
                     _ = Import.SetBkColor (handle, Format (text.Background));
-                    _ = Import.TextOut (handle, text.X, text.Y, text.Content, text.Content.Length);
+                    _ = Import.TextOut (handle, text.X, text.Y, content, content.Length);
                     _ = Import.SelectObject (handle, previous);
                     _ = Import.DeleteObject (current);
                     _ = Import.ReleaseDC (this.Handle, handle);
@@ -1045,6 +1052,14 @@ namespace Ignite {
                     System.Threading.Tasks.Task.Delay (delay).Wait ();
                     draw.Erase ();
                 });
+
+            public void Clear () {
+                if (this.Handle == nint.Zero)
+                    return;
+
+                this.Append (new Rectangle (0, 0, Monitors[this.Monitor].Resolution.Width, Monitors[this.Monitor].Resolution.Height, Color.Gray, fill: true));
+                System.GC.Collect (2, System.GCCollectionMode.Aggressive);
+            }
 
             public void Erase () {
                 if (this.Handle == nint.Zero)
